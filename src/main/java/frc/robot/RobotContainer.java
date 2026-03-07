@@ -10,6 +10,9 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import static frc.robot.Constants.OperatorConstants.*;
 
+import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.commands.PathPlannerAuto;
+
 import frc.robot.commands.ClimbDown;
 import frc.robot.commands.ClimbUp;
 import frc.robot.commands.Drive;
@@ -17,9 +20,11 @@ import frc.robot.commands.Eject;
 import frc.robot.commands.ExampleAuto;
 import frc.robot.commands.Intake;
 import frc.robot.commands.LaunchSequence;
+import frc.robot.commands.VisionAimAndShoot;
 import frc.robot.subsystems.CANDriveSubsystem;
 import frc.robot.subsystems.CANFuelSubsystem;
 import frc.robot.subsystems.ClimberSubsystem;
+import frc.robot.subsystems.VisionSubsystem;
 
 /**
  * This class is where the bulk of the robot should be declared. Since
@@ -33,6 +38,7 @@ public class RobotContainer {
   private final CANDriveSubsystem driveSubsystem = new CANDriveSubsystem();
   private final CANFuelSubsystem fuelSubsystem = new CANFuelSubsystem();
   private final ClimberSubsystem climberSubsystem = new ClimberSubsystem();
+  private final VisionSubsystem visionSubsystem = new VisionSubsystem();
 
   // The driver's controller
   private final CommandXboxController driverController = new CommandXboxController(
@@ -51,10 +57,20 @@ public class RobotContainer {
   public RobotContainer() {
     configureBindings();
 
+    //this is used to add commands into the pathPlanner app to make an auto
+    NamedCommands.registerCommand("Shoot Command", new LaunchSequence(fuelSubsystem));
+    NamedCommands.registerCommand("Intake Command", new Intake(fuelSubsystem));
+    NamedCommands.registerCommand("Aim and Shoot", new VisionAimAndShoot(fuelSubsystem, driveSubsystem, visionSubsystem));
+
+
     // Set the options to show up in the Dashboard for selecting auto modes. If you
     // add additional auto modes you can add additional lines here with
     // autoChooser.addOption
     autoChooser.setDefaultOption("Autonomous", new ExampleAuto(driveSubsystem, fuelSubsystem));
+
+    //add the basic auto in path planner as a selectable auto
+    autoChooser.addOption("Basic Auto", new PathPlannerAuto("Basic Auto"));
+
   }
 
   /**
@@ -82,6 +98,8 @@ public class RobotContainer {
     driverController.povDown().whileTrue(new ClimbDown(climberSubsystem));
     // While the up arrow on the directional pad is held it will cimb the robot
     driverController.povUp().whileTrue(new ClimbUp(climberSubsystem));
+
+    driverController.back().whileTrue(new VisionAimAndShoot(fuelSubsystem, driveSubsystem, visionSubsystem));
 
     // Set the default command for the drive subsystem to the command provided by
     // factory with the values provided by the joystick axes on the driver

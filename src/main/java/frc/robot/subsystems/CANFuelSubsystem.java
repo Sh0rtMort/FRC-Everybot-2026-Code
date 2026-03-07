@@ -4,19 +4,26 @@
 
 package frc.robot.subsystems;
 
+import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.config.MAXMotionConfig;
+import com.revrobotics.spark.config.MAXMotionConfigAccessor;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkMax;
 
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.Constants.FuelConstants;
+import frc.robot.Constants.LauncherPIDConstants;
 
 import static frc.robot.Constants.FuelConstants.*;
 
@@ -24,6 +31,14 @@ public class CANFuelSubsystem extends SubsystemBase {
   private final SparkMax LeftIntakeLauncher;
   private final SparkMax RightIntakeLauncher;
   private final SparkMax Indexer;
+
+  private RelativeEncoder leftEncoder;
+  private RelativeEncoder rightEncoder;
+
+  private int targetVelocty = 0; //find the velocity needed
+
+  PIDController leftpid;
+  PIDController rightpid;
 
   /** Creates a new CANBallSubsystem. */
   public CANFuelSubsystem() {
@@ -36,6 +51,8 @@ public class CANFuelSubsystem extends SubsystemBase {
     // the config to the controller
     SparkMaxConfig feederConfig = new SparkMaxConfig();
     feederConfig.smartCurrentLimit(INDEXER_MOTOR_CURRENT_LIMIT);
+    feederConfig.closedLoop.pid(FuelConstants.feederP, FuelConstants.feederI, FuelConstants.feederD);
+    feederConfig.closedLoop.velocityFF(0.00018);
     Indexer.configure(feederConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
     // create the configuration for the launcher roller, set a current limit, set
@@ -46,9 +63,13 @@ public class CANFuelSubsystem extends SubsystemBase {
     launcherConfig.smartCurrentLimit(LAUNCHER_MOTOR_CURRENT_LIMIT);
     launcherConfig.voltageCompensation(12);
     launcherConfig.idleMode(IdleMode.kCoast);
+    launcherConfig.closedLoop.pid(LauncherPIDConstants.launcherP, LauncherPIDConstants.launcherI, LauncherPIDConstants.LauncherD);
+    launcherConfig.closedLoop.velocityFF(LauncherPIDConstants.launcherFF);
     RightIntakeLauncher.configure(launcherConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     launcherConfig.inverted(true);
     LeftIntakeLauncher.configure(launcherConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
+    
 
     // put default values for various fuel operations onto the dashboard
     // all commands using this subsystem pull values from the dashbaord to allow
@@ -70,6 +91,19 @@ public class CANFuelSubsystem extends SubsystemBase {
   // A method to set the voltage of the intake roller
   public void setFeederRoller(double power) {
     Indexer.set(power); // positive for shooting
+  }
+
+  public void setFeederVelocity(double velocity) {
+    Indexer.getClosedLoopController().setSetpoint(velocity, ControlType.kVelocity);
+  }
+
+  //creates a more efficient and reliable method of shooting; this allows for the shooter to maintain a exact velocity
+  //instead of a percentage. Come into play as battery begins to deplete
+  public void setLaunchMotorsVelocity(double velocity) {
+    //this allows for the velocity to be changed wherever the command is being called, I.E with vision calculator
+
+    LeftIntakeLauncher.getClosedLoopController().setSetpoint(velocity, ControlType.kVelocity);
+    RightIntakeLauncher.getClosedLoopController().setSetpoint(velocity, ControlType.kVelocity);
   }
 
   // A method to stop the rollers

@@ -28,6 +28,10 @@ public class Eject extends Command {
         .setIntakeLauncherRoller(
              -1 * SmartDashboard.getNumber("Intaking intake roller value", INTAKE_EJECT_PERCENT));
      fuelSubsystem.setFeederRoller(SmartDashboard.getNumber("Intaking intake roller value", INDEXER_LAUNCHING_PERCENT));
+
+     //or instead of using the GUI to set the speed, we can just set the percentage in the code
+      //  fuelSubsystem.setIntakeLauncherRoller(INTAKE_EJECT_PERCENT);
+      //  fuelSubsystem.setFeederRoller(INDEXER_LAUNCHING_PERCENT);
   }
 
   // Called every time the scheduler runs while the command is scheduled. This

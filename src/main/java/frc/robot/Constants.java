@@ -27,6 +27,8 @@ public final class Constants {
     public static final int RIGHT_LEADER_ID = 2;
     public static final int RIGHT_FOLLOWER_ID = 4;
 
+    public static final int pigeon2_ID = 10;
+
     // Current limit for drivetrain motors. 60A is a reasonable maximum to reduce
     // likelihood of tripping breakers or damaging CIM motors
     public static final int DRIVE_MOTOR_CURRENT_LIMIT = 60;
@@ -52,6 +54,17 @@ public final class Constants {
     public static final double INTAKE_EJECT_PERCENT = -0.8;
 
     public static final double SPIN_UP_SECONDS = 0.75;
+
+    public static final double feederP = 0.008;
+    public static final double feederI = 0;
+    public static final double feederD = 0;
+  }
+
+  public static final class LauncherPIDConstants {
+    public static final double launcherP = 0.008;
+    public static final double launcherI = 0;
+    public static final double LauncherD = 0;
+    public static final double launcherFF = 0.0018;
   }
 
   public static final class ClimbConstatns {
@@ -63,6 +76,10 @@ public final class Constants {
     // Percentage to power the motor both up and down
     public static final double CLIMBER_MOTOR_DOWN_PERCENT = -0.8;
     public static final double CLIMBER_MOTOR_UP_PERCENT = 0.8;
+
+    public static final double climberP = 0;
+    public static final double climberI = 0;
+    public static final double climberD = 0;
   }
 
   public static final class OperatorConstants {
@@ -77,4 +94,9 @@ public final class Constants {
     public static final double DRIVE_SCALING = 0.7;
     public static final double ROTATION_SCALING = 0.8;
   } 
+
+  public static final class LimelightConstants {
+  
+    
+  }
 }

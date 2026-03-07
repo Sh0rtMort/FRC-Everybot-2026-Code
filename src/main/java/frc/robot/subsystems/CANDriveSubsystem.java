@@ -7,10 +7,28 @@ package frc.robot.subsystems;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.ctre.phoenix6.configs.Pigeon2Configuration;
+import com.ctre.phoenix6.hardware.Pigeon2;
+import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.swerve.utility.WheelForceCalculator.Feedforwards;
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.config.ModuleConfig;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.controllers.PPLTVController;
+import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
+import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
+import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
+import edu.wpi.first.math.kinematics.Kinematics;
+import edu.wpi.first.math.kinematics.Odometry;
+import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import static frc.robot.Constants.DriveConstants.*;
@@ -21,7 +39,17 @@ public class CANDriveSubsystem extends SubsystemBase {
   private final SparkMax rightLeader;
   private final SparkMax rightFollower;
 
+  private RelativeEncoder leftEncoder;
+  private RelativeEncoder rightEncoder; //set these to the lead encoders
+
+  private Pigeon2 gyro;
+
+
   private final DifferentialDrive drive;
+
+  private final DifferentialDriveOdometry odometry;
+  private final DifferentialDriveKinematics kinematics;
+
 
   public CANDriveSubsystem() {
     // create brushed motors for drive
@@ -32,6 +60,19 @@ public class CANDriveSubsystem extends SubsystemBase {
 
     // set up differential drive class
     drive = new DifferentialDrive(leftLeader, rightLeader);
+
+    leftEncoder = leftLeader.getEncoder();
+    rightEncoder = rightLeader.getEncoder();
+
+    gyro = new Pigeon2(pigeon2_ID);
+
+    odometry = new DifferentialDriveOdometry(
+      gyro.getRotation2d(),
+       leftEncoder.getPosition(),
+        rightEncoder.getPosition()
+      );
+
+      kinematics = new DifferentialDriveKinematics(trackWidth); //Track width in meters
 
     // Set can timeout. Because this project only sets parameters once on
     // construction, the timeout can be long without blocking robot operation. Code
@@ -67,14 +108,80 @@ public class CANDriveSubsystem extends SubsystemBase {
     // so that postive values drive both sides forward
     config.inverted(true);
     leftLeader.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
+    // RobotConfig robotConfig = new RobotConfig(
+    //   robotMass,
+    //    6.0, //moment of inertia
+    //      );
+
+    AutoBuilder.configure(
+      this::getPose,
+       this::resetPose,
+        this::getChassisSpeeds,
+          (speeds, feedforwards) -> driveRobotRelative(speeds),
+          new PPLTVController(0.02),
+           null,
+            () -> {
+              var alliance = DriverStation.getAlliance();
+              if (alliance.isPresent()) {
+                return alliance.get() == DriverStation.Alliance.Red;
+              }
+              return false;
+            },
+             this
+    );
+
   }
 
-  @Override
-  public void periodic() {
+  //this is here if needed for the encoders
+  private double rpmToMeters(double rotations) {
+    double wheelRotations = rotations / gearRatio;
+    return wheelRotations * Math.PI * wheelDiameter;
   }
+
+  private double rpmToMetersPerSecond(double rpm) {
+    double wheelRPM = rpm / gearRatio;
+    double wheelCircumference = Math.PI * wheelRPM;
+    return (wheelRPM * wheelCircumference) / 60.0;
+}
 
   public void driveArcade(double xSpeed, double zRotation) {
     drive.arcadeDrive(xSpeed, zRotation);
+  }
+
+  public Pose2d getPose() {
+    return odometry.getPoseMeters();
+  }
+
+  public void resetPose(Pose2d pose2d) {
+    odometry.resetPose(pose2d);
+  }
+
+  public ChassisSpeeds getChassisSpeeds() {
+    double leftSpeed = rpmToMetersPerSecond(leftEncoder.getVelocity());
+    double rightSpeed = rpmToMetersPerSecond(rightEncoder.getVelocity());
+
+    return kinematics.toChassisSpeeds(
+        new DifferentialDriveWheelSpeeds(leftSpeed, rightSpeed)
+    );
+  }
+
+  public void driveRobotRelative(ChassisSpeeds speeds) {
+
+    DifferentialDriveWheelSpeeds wheelSpeeds =
+        kinematics.toWheelSpeeds(speeds);
+
+    double leftOutput = wheelSpeeds.leftMetersPerSecond;
+    double rightOutput = wheelSpeeds.rightMetersPerSecond;
+
+    leftLeader.set(leftOutput / 0.95);
+    rightLeader.set(rightOutput / 0.95);
+}
+
+  
+
+  @Override
+  public void periodic() {
   }
 
 }

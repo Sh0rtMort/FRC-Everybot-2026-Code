@@ -15,9 +15,14 @@ public class Launch extends Command {
 
   CANFuelSubsystem fuelSubsystem;
 
-  public Launch(CANFuelSubsystem fuelSystem) {
+  double LauncherVelocity;
+  double FeederVelocity;
+
+  public Launch(CANFuelSubsystem fuelSystem, double LauncherVelocity, double FeederVelocity) {
     addRequirements(fuelSystem);
     this.fuelSubsystem = fuelSystem;
+    this.LauncherVelocity = LauncherVelocity;
+    this.FeederVelocity = FeederVelocity;
   }
 
   // Called when the command is initially scheduled. Set the rollers to the
@@ -28,6 +33,10 @@ public class Launch extends Command {
         .setIntakeLauncherRoller(
             SmartDashboard.getNumber("Launching launcher roller value", LAUNCHING_LAUNCHER_PERCENT));
     fuelSubsystem.setFeederRoller(SmartDashboard.getNumber("Launching feeder roller value", INDEXER_LAUNCHING_PERCENT));
+
+    //Uncomment to enable build in rpm control
+    // fuelSubsystem.setLaunchMotorsVelocity(LauncherVelocity);
+    // fuelSubsystem.setFeederVelocity(FeederVelocity);
   }
 
   // Called every time the scheduler runs while the command is scheduled. This

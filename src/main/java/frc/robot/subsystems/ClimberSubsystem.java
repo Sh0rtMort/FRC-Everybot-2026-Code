@@ -24,6 +24,7 @@ public class ClimberSubsystem extends SubsystemBase {
     SparkMaxConfig climbConfig = new SparkMaxConfig();
     climbConfig.smartCurrentLimit(CLIMBER_MOTOR_CURRENT_LIMIT);
     climbConfig.idleMode(IdleMode.kBrake);
+    climbConfig.closedLoop.pid(0, 0, 0);
     climberMotor.configure(climbConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   }
 
@@ -32,9 +33,18 @@ public class ClimberSubsystem extends SubsystemBase {
     climberMotor.set(power);
   }
 
+  public void setClimberSetpoint(double setpoint) {
+
+  }
+
   // A method to stop the climber
   public void stop() {
     climberMotor.set(0);
+  }
+
+  //needed if using PID commands
+  public void climberPosition() {
+    climberMotor.getEncoder().getPosition();
   }
 
   @Override
