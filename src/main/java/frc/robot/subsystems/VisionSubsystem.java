@@ -1,21 +1,37 @@
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.DegreesPerSecond;
+
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.LimelightHelpers;
+import frc.robot.commands.Intake;
+import limelight.Limelight;
+import limelight.networktables.AngularVelocity3d;
+import limelight.networktables.Orientation3d;
+import limelight.networktables.LimelightSettings.LEDMode;
 
 public class VisionSubsystem extends SubsystemBase{
     private String limelightName = "KPLime";
+
+    //vender dep
+    private Limelight limelight = new Limelight(limelightName);
     
 
     public VisionSubsystem() {
-        double tx = LimelightHelpers.getTX(limelightName);
-        double ty = LimelightHelpers.getTY(limelightName);
-        double ta = LimelightHelpers.getTA(limelightName);
-        boolean hasTarget = LimelightHelpers.getTV(limelightName);
+        // double tx = LimelightHelpers.getTX(limelightName);
+        // double ty = LimelightHelpers.getTY(limelightName);
+        // double ta = LimelightHelpers.getTA(limelightName);
+        // boolean hasTarget = LimelightHelpers.getTV(limelightName);
 
-        double txnc = LimelightHelpers.getTXNC(limelightName);
-        double tync = LimelightHelpers.getTYNC(limelightName);
+        // double txnc = LimelightHelpers.getTXNC(limelightName);
+        // double tync = LimelightHelpers.getTYNC(limelightName);
 
+        //vender dep setting
+        limelight.getSettings()
+        .withLimelightLEDMode(LEDMode.PipelineControl)
+        .withCameraOffset(Pose3d.kZero)
+        .save();
     }
 
 
@@ -65,5 +81,10 @@ public class VisionSubsystem extends SubsystemBase{
     }
 
 
+    //this was made with the YASS limelight venderdep
+    public void estimatePose() {
+        
+        
+    }
 
 }

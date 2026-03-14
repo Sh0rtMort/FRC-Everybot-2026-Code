@@ -27,11 +27,20 @@ public final class Constants {
     public static final int RIGHT_LEADER_ID = 2;
     public static final int RIGHT_FOLLOWER_ID = 4;
 
+    public static final double maxDriveSpeed = 4.5; //in m/s
+
     public static final int pigeon2_ID = 10;
 
     // Current limit for drivetrain motors. 60A is a reasonable maximum to reduce
     // likelihood of tripping breakers or damaging CIM motors
     public static final int DRIVE_MOTOR_CURRENT_LIMIT = 60;
+
+    public static final double gearRatio = 1.75;
+    public static final double wheelDiameter = 0.5;
+
+    public static final double trackWidth = 0.55; //in meters
+
+    public static final double robotMass = 50; //in kg
   }
 
   public static final class FuelConstants {

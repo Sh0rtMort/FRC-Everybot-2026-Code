@@ -58,18 +58,18 @@ public class RobotContainer {
     configureBindings();
 
     //this is used to add commands into the pathPlanner app to make an auto
-    NamedCommands.registerCommand("Shoot Command", new LaunchSequence(fuelSubsystem));
-    NamedCommands.registerCommand("Intake Command", new Intake(fuelSubsystem));
-    NamedCommands.registerCommand("Aim and Shoot", new VisionAimAndShoot(fuelSubsystem, driveSubsystem, visionSubsystem));
+    // NamedCommands.registerCommand("Shoot Command", new LaunchSequence(fuelSubsystem));
+    // NamedCommands.registerCommand("Intake Command", new Intake(fuelSubsystem));
+    // NamedCommands.registerCommand("Aim and Shoot", new VisionAimAndShoot(fuelSubsystem, driveSubsystem, visionSubsystem));
 
 
     // Set the options to show up in the Dashboard for selecting auto modes. If you
     // add additional auto modes you can add additional lines here with
     // autoChooser.addOption
-    autoChooser.setDefaultOption("Autonomous", new ExampleAuto(driveSubsystem, fuelSubsystem));
+    // autoChooser.setDefaultOption("Autonomous", new ExampleAuto(driveSubsystem, fuelSubsystem));
 
-    //add the basic auto in path planner as a selectable auto
-    autoChooser.addOption("Basic Auto", new PathPlannerAuto("Basic Auto"));
+    // //add the basic auto in path planner as a selectable auto
+    // autoChooser.addOption("Basic Auto", new PathPlannerAuto("Basic Auto"));
 
   }
 
@@ -121,6 +121,6 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     // An example command will be run in autonomous
-    return autoChooser.getSelected();
+    return new ExampleAuto(driveSubsystem, fuelSubsystem);
   }
 }

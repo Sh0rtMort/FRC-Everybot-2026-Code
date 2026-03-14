@@ -42,13 +42,13 @@ public class CANDriveSubsystem extends SubsystemBase {
   private RelativeEncoder leftEncoder;
   private RelativeEncoder rightEncoder; //set these to the lead encoders
 
-  private Pigeon2 gyro;
+  public Pigeon2 gyro;
 
 
   private final DifferentialDrive drive;
 
-  private final DifferentialDriveOdometry odometry;
-  private final DifferentialDriveKinematics kinematics;
+  // private final DifferentialDriveOdometry odometry;
+  // private final DifferentialDriveKinematics kinematics;
 
 
   public CANDriveSubsystem() {
@@ -64,15 +64,17 @@ public class CANDriveSubsystem extends SubsystemBase {
     leftEncoder = leftLeader.getEncoder();
     rightEncoder = rightLeader.getEncoder();
 
-    gyro = new Pigeon2(pigeon2_ID);
+    // gyro = new Pigeon2(pigeon2_ID);
 
-    odometry = new DifferentialDriveOdometry(
-      gyro.getRotation2d(),
-       leftEncoder.getPosition(),
-        rightEncoder.getPosition()
-      );
+    
 
-      kinematics = new DifferentialDriveKinematics(trackWidth); //Track width in meters
+    // odometry = new DifferentialDriveOdometry(
+    //   gyro.getRotation2d(),
+    //    leftEncoder.getPosition(),
+    //     rightEncoder.getPosition()
+    //   );
+
+    // kinematics = new DifferentialDriveKinematics(trackWidth); //Track width in meters
 
     // Set can timeout. Because this project only sets parameters once on
     // construction, the timeout can be long without blocking robot operation. Code
@@ -109,27 +111,38 @@ public class CANDriveSubsystem extends SubsystemBase {
     config.inverted(true);
     leftLeader.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
-    // RobotConfig robotConfig = new RobotConfig(
-    //   robotMass,
-    //    6.0, //moment of inertia
-    //      );
+    // RobotConfig rConfig;
 
-    AutoBuilder.configure(
-      this::getPose,
-       this::resetPose,
-        this::getChassisSpeeds,
-          (speeds, feedforwards) -> driveRobotRelative(speeds),
-          new PPLTVController(0.02),
-           null,
-            () -> {
-              var alliance = DriverStation.getAlliance();
-              if (alliance.isPresent()) {
-                return alliance.get() == DriverStation.Alliance.Red;
-              }
-              return false;
-            },
-             this
-    );
+    // rConfig = new RobotConfig(
+    //   robotMass,
+    //   (robotMass * (trackWidth * trackWidth)),
+    //   null,
+    //   trackWidth
+    // );
+
+    // try{
+    //   rConfig = RobotConfig.fromGUISettings();
+    // } catch (Exception e) {
+    //   // Handle exception as needed
+    //   e.printStackTrace();
+    // }
+
+  //   AutoBuilder.configure(
+  //     this::getPose,
+  //      this::resetPose,
+  //       this::getChassisSpeeds,
+  //         (speeds, feedforwards) -> driveRobotRelative(speeds),
+  //         new PPLTVController(0.02),
+  //          rConfig,
+  //           () -> {
+  //             var alliance = DriverStation.getAlliance();
+  //             if (alliance.isPresent()) {
+  //               return alliance.get() == DriverStation.Alliance.Red;
+  //             }
+  //             return false;
+  //           },
+  //            this
+  //   );
 
   }
 
@@ -149,39 +162,40 @@ public class CANDriveSubsystem extends SubsystemBase {
     drive.arcadeDrive(xSpeed, zRotation);
   }
 
-  public Pose2d getPose() {
-    return odometry.getPoseMeters();
-  }
+  // public Pose2d getPose() {
+  //   return odometry.getPoseMeters();
+  // }
 
-  public void resetPose(Pose2d pose2d) {
-    odometry.resetPose(pose2d);
-  }
+  // public void resetPose(Pose2d pose2d) {
+  //   odometry.resetPose(pose2d);
+  // }
 
-  public ChassisSpeeds getChassisSpeeds() {
-    double leftSpeed = rpmToMetersPerSecond(leftEncoder.getVelocity());
-    double rightSpeed = rpmToMetersPerSecond(rightEncoder.getVelocity());
+  // public ChassisSpeeds getChassisSpeeds() {
+  //   double leftSpeed = rpmToMetersPerSecond(leftEncoder.getVelocity());
+  //   double rightSpeed = rpmToMetersPerSecond(rightEncoder.getVelocity());
 
-    return kinematics.toChassisSpeeds(
-        new DifferentialDriveWheelSpeeds(leftSpeed, rightSpeed)
-    );
-  }
+  //   return kinematics.toChassisSpeeds(
+  //       new DifferentialDriveWheelSpeeds(leftSpeed, rightSpeed)
+  //   );
+  // }
 
-  public void driveRobotRelative(ChassisSpeeds speeds) {
+//   public void driveRobotRelative(ChassisSpeeds speeds) {
 
-    DifferentialDriveWheelSpeeds wheelSpeeds =
-        kinematics.toWheelSpeeds(speeds);
+//     DifferentialDriveWheelSpeeds wheelSpeeds =
+//         kinematics.toWheelSpeeds(speeds);
 
-    double leftOutput = wheelSpeeds.leftMetersPerSecond;
-    double rightOutput = wheelSpeeds.rightMetersPerSecond;
+//     double leftOutput = wheelSpeeds.leftMetersPerSecond;
+//     double rightOutput = wheelSpeeds.rightMetersPerSecond;
 
-    leftLeader.set(leftOutput / 0.95);
-    rightLeader.set(rightOutput / 0.95);
-}
+//     leftLeader.set(leftOutput / 0.95);
+//     rightLeader.set(rightOutput / 0.95);
+// }
 
   
 
   @Override
   public void periodic() {
+
   }
 
 }
