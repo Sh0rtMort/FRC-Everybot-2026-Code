@@ -5,6 +5,7 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -13,14 +14,15 @@ import static frc.robot.Constants.OperatorConstants.*;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 
-import frc.robot.commands.ClimbDown;
-import frc.robot.commands.ClimbUp;
 import frc.robot.commands.Drive;
-import frc.robot.commands.Eject;
-import frc.robot.commands.ExampleAuto;
-import frc.robot.commands.Intake;
-import frc.robot.commands.LaunchSequence;
-import frc.robot.commands.VisionAimAndShoot;
+import frc.robot.commands.AutoCommands.ExampleAuto;
+import frc.robot.commands.AutoCommands.SecondExample;
+import frc.robot.commands.ClimberCommands.ClimbDown;
+import frc.robot.commands.ClimberCommands.ClimbUp;
+import frc.robot.commands.FuelCommands.Eject;
+import frc.robot.commands.FuelCommands.Intake;
+import frc.robot.commands.FuelCommands.LaunchSequence;
+import frc.robot.commands.VisionCommands.AimAndShoot;
 import frc.robot.subsystems.CANDriveSubsystem;
 import frc.robot.subsystems.CANFuelSubsystem;
 import frc.robot.subsystems.ClimberSubsystem;
@@ -55,22 +57,11 @@ public class RobotContainer {
    * The container for the robot. Contains subsystems, OI devices, and commands.
    */
   public RobotContainer() {
+
+    autoChooser.addOption("Time Based Example Auto", new ExampleAuto(driveSubsystem, fuelSubsystem));
+    autoChooser.addOption("PID Based Example Auto", new SecondExample(driveSubsystem, fuelSubsystem, visionSubsystem));
+
     configureBindings();
-
-    //this is used to add commands into the pathPlanner app to make an auto
-    // NamedCommands.registerCommand("Shoot Command", new LaunchSequence(fuelSubsystem));
-    // NamedCommands.registerCommand("Intake Command", new Intake(fuelSubsystem));
-    // NamedCommands.registerCommand("Aim and Shoot", new VisionAimAndShoot(fuelSubsystem, driveSubsystem, visionSubsystem));
-
-
-    // Set the options to show up in the Dashboard for selecting auto modes. If you
-    // add additional auto modes you can add additional lines here with
-    // autoChooser.addOption
-    // autoChooser.setDefaultOption("Autonomous", new ExampleAuto(driveSubsystem, fuelSubsystem));
-
-    // //add the basic auto in path planner as a selectable auto
-    // autoChooser.addOption("Basic Auto", new PathPlannerAuto("Basic Auto"));
-
   }
 
   /**
@@ -94,12 +85,12 @@ public class RobotContainer {
     // While the A button is held on the operator controller, eject fuel back out
     // the intake
     driverController.a().whileTrue(new Eject(fuelSubsystem));
-   // While the down arrow on the directional pad is held it will unclimb the robot
+   // While the down arrow on the directional pad(d-pad) is held it will unclimb the robot
     driverController.povDown().whileTrue(new ClimbDown(climberSubsystem));
-    // While the up arrow on the directional pad is held it will cimb the robot
+    // While the up arrow on the directional pad(d-pad) is held it will cimb the robot
     driverController.povUp().whileTrue(new ClimbUp(climberSubsystem));
 
-    driverController.back().whileTrue(new VisionAimAndShoot(fuelSubsystem, driveSubsystem, visionSubsystem));
+    driverController.back().whileTrue(new AimAndShoot(driveSubsystem, fuelSubsystem, visionSubsystem));
 
     // Set the default command for the drive subsystem to the command provided by
     // factory with the values provided by the joystick axes on the driver
@@ -108,9 +99,13 @@ public class RobotContainer {
     // value)
     driveSubsystem.setDefaultCommand(new Drive(driveSubsystem, driverController));
 
+    //setting default commands allows a command to be ran if the required subsystem is not being used
+    //by another command. I.E the fuel subsystem will be defaulted to stop when not applying a command.
     fuelSubsystem.setDefaultCommand(fuelSubsystem.run(() -> fuelSubsystem.stop()));
-
+    //stops climber motors if not running climber command
     climberSubsystem.setDefaultCommand(climberSubsystem.run(() -> climberSubsystem.stop()));
+    //turns LEDs off if not using limelight
+    visionSubsystem.setDefaultCommand(visionSubsystem.run(() -> visionSubsystem.setLEDmode(0)));
 
   }
 
@@ -121,6 +116,6 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     // An example command will be run in autonomous
-    return new ExampleAuto(driveSubsystem, fuelSubsystem);
+    return autoChooser.getSelected();
   }
 }

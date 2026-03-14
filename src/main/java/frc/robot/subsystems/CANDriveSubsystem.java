@@ -31,6 +31,8 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants.DriveConstants;
+
 import static frc.robot.Constants.DriveConstants.*;
 
 public class CANDriveSubsystem extends SubsystemBase {
@@ -63,18 +65,6 @@ public class CANDriveSubsystem extends SubsystemBase {
 
     leftEncoder = leftLeader.getEncoder();
     rightEncoder = rightLeader.getEncoder();
-
-    // gyro = new Pigeon2(pigeon2_ID);
-
-    
-
-    // odometry = new DifferentialDriveOdometry(
-    //   gyro.getRotation2d(),
-    //    leftEncoder.getPosition(),
-    //     rightEncoder.getPosition()
-    //   );
-
-    // kinematics = new DifferentialDriveKinematics(trackWidth); //Track width in meters
 
     // Set can timeout. Because this project only sets parameters once on
     // construction, the timeout can be long without blocking robot operation. Code
@@ -111,39 +101,6 @@ public class CANDriveSubsystem extends SubsystemBase {
     config.inverted(true);
     leftLeader.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
-    // RobotConfig rConfig;
-
-    // rConfig = new RobotConfig(
-    //   robotMass,
-    //   (robotMass * (trackWidth * trackWidth)),
-    //   null,
-    //   trackWidth
-    // );
-
-    // try{
-    //   rConfig = RobotConfig.fromGUISettings();
-    // } catch (Exception e) {
-    //   // Handle exception as needed
-    //   e.printStackTrace();
-    // }
-
-  //   AutoBuilder.configure(
-  //     this::getPose,
-  //      this::resetPose,
-  //       this::getChassisSpeeds,
-  //         (speeds, feedforwards) -> driveRobotRelative(speeds),
-  //         new PPLTVController(0.02),
-  //          rConfig,
-  //           () -> {
-  //             var alliance = DriverStation.getAlliance();
-  //             if (alliance.isPresent()) {
-  //               return alliance.get() == DriverStation.Alliance.Red;
-  //             }
-  //             return false;
-  //           },
-  //            this
-  //   );
-
   }
 
   //this is here if needed for the encoders
@@ -156,42 +113,15 @@ public class CANDriveSubsystem extends SubsystemBase {
     double wheelRPM = rpm / gearRatio;
     double wheelCircumference = Math.PI * wheelRPM;
     return (wheelRPM * wheelCircumference) / 60.0;
-}
+  }
+
+  public double getEncoderMeters() {
+    return (leftEncoder.getPosition() + -rightEncoder.getPosition()) / 2 * DriveConstants.encoderTick2Meters;
+  }
 
   public void driveArcade(double xSpeed, double zRotation) {
     drive.arcadeDrive(xSpeed, zRotation);
   }
-
-  // public Pose2d getPose() {
-  //   return odometry.getPoseMeters();
-  // }
-
-  // public void resetPose(Pose2d pose2d) {
-  //   odometry.resetPose(pose2d);
-  // }
-
-  // public ChassisSpeeds getChassisSpeeds() {
-  //   double leftSpeed = rpmToMetersPerSecond(leftEncoder.getVelocity());
-  //   double rightSpeed = rpmToMetersPerSecond(rightEncoder.getVelocity());
-
-  //   return kinematics.toChassisSpeeds(
-  //       new DifferentialDriveWheelSpeeds(leftSpeed, rightSpeed)
-  //   );
-  // }
-
-//   public void driveRobotRelative(ChassisSpeeds speeds) {
-
-//     DifferentialDriveWheelSpeeds wheelSpeeds =
-//         kinematics.toWheelSpeeds(speeds);
-
-//     double leftOutput = wheelSpeeds.leftMetersPerSecond;
-//     double rightOutput = wheelSpeeds.rightMetersPerSecond;
-
-//     leftLeader.set(leftOutput / 0.95);
-//     rightLeader.set(rightOutput / 0.95);
-// }
-
-  
 
   @Override
   public void periodic() {

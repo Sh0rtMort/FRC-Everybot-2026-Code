@@ -5,7 +5,7 @@ import static edu.wpi.first.units.Units.DegreesPerSecond;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.LimelightHelpers;
-import frc.robot.commands.Intake;
+import frc.robot.commands.FuelCommands.Intake;
 import limelight.Limelight;
 import limelight.networktables.AngularVelocity3d;
 import limelight.networktables.Orientation3d;
