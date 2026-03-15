@@ -23,6 +23,7 @@ import frc.robot.commands.FuelCommands.Eject;
 import frc.robot.commands.FuelCommands.Intake;
 import frc.robot.commands.FuelCommands.LaunchSequence;
 import frc.robot.commands.VisionCommands.AimAndShoot;
+import frc.robot.commands.VisionCommands.AimAtPoint;
 import frc.robot.subsystems.CANDriveSubsystem;
 import frc.robot.subsystems.CANFuelSubsystem;
 import frc.robot.subsystems.ClimberSubsystem;
@@ -91,6 +92,8 @@ public class RobotContainer {
     driverController.povUp().whileTrue(new ClimbUp(climberSubsystem));
 
     driverController.back().whileTrue(new AimAndShoot(driveSubsystem, fuelSubsystem, visionSubsystem));
+
+    driverController.rightTrigger().whileTrue(new AimAtPoint(driveSubsystem, () -> -driverController.getLeftY() * DRIVE_SCALING));
 
     // Set the default command for the drive subsystem to the command provided by
     // factory with the values provided by the joystick axes on the driver

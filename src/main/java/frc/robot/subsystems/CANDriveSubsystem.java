@@ -20,7 +20,10 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
@@ -28,12 +31,19 @@ import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
 import edu.wpi.first.math.kinematics.Kinematics;
 import edu.wpi.first.math.kinematics.Odometry;
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.simulation.DifferentialDrivetrainSim;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
 import frc.robot.Constants.DriveConstants;
 
 import static frc.robot.Constants.DriveConstants.*;
+
+import java.lang.constant.Constable;
 
 public class CANDriveSubsystem extends SubsystemBase {
   private final SparkMax leftLeader;
@@ -44,14 +54,21 @@ public class CANDriveSubsystem extends SubsystemBase {
   private RelativeEncoder leftEncoder;
   private RelativeEncoder rightEncoder; //set these to the lead encoders
 
-  public Pigeon2 gyro;
+  private Pigeon2 gyro = new Pigeon2(31);
 
+  private DifferentialDriveKinematics kinematics = 
+    new DifferentialDriveKinematics(Constants.DriveConstants.trackWidth);
+
+  private final DifferentialDriveOdometry odometry;
+
+  private final PIDController headingPID =
+    new PIDController(10, 0.0, 3);
+
+  private final Field2d field = new Field2d();
 
   private final DifferentialDrive drive;
 
-  // private final DifferentialDriveOdometry odometry;
-  // private final DifferentialDriveKinematics kinematics;
-
+  private DifferentialDrivetrainSim driveSim;
 
   public CANDriveSubsystem() {
     // create brushed motors for drive
@@ -65,6 +82,11 @@ public class CANDriveSubsystem extends SubsystemBase {
 
     leftEncoder = leftLeader.getEncoder();
     rightEncoder = rightLeader.getEncoder();
+
+    // leftEncoder.setPosition(0);
+    // rightEncoder.setPosition(0);
+
+    gyro.getConfigurator().apply(new Pigeon2Configuration());
 
     // Set can timeout. Because this project only sets parameters once on
     // construction, the timeout can be long without blocking robot operation. Code
@@ -101,6 +123,19 @@ public class CANDriveSubsystem extends SubsystemBase {
     config.inverted(true);
     leftLeader.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
+    odometry = new DifferentialDriveOdometry(getHeading(), leftEncoder.getPosition(), rightEncoder.getPosition());
+
+    SmartDashboard.putData("Field", field);
+
+    driveSim = new DifferentialDrivetrainSim(
+    DCMotor.getNEO(2),       // motors per side
+    Constants.DriveConstants.gearRatio,                   // gearing
+    7.5,                     // moment of inertia
+    Constants.DriveConstants.robotMass,                    // robot mass (kg)
+    Constants.DriveConstants.wheelDiameter / 2, // wheel radius
+    Constants.DriveConstants.trackWidth,        // track width
+    null
+  );
   }
 
   //this is here if needed for the encoders
@@ -119,13 +154,88 @@ public class CANDriveSubsystem extends SubsystemBase {
     return (leftEncoder.getPosition() + -rightEncoder.getPosition()) / 2 * DriveConstants.encoderTick2Meters;
   }
 
+  public double getLeftDistanceMeters() {
+    return leftEncoder.getPosition() * encoderTick2Meters;
+  }
+
+  public double getRightDistanceMeters() {
+    return -rightEncoder.getPosition() * encoderTick2Meters;
+  }
+
   public void driveArcade(double xSpeed, double zRotation) {
     drive.arcadeDrive(xSpeed, zRotation);
+  }
+
+  public Rotation2d getHeading() {
+  return Rotation2d.fromDegrees(gyro.getYaw().getValueAsDouble());
   }
 
   @Override
   public void periodic() {
 
+  Pose2d pose = odometry.update(
+    getHeading(),
+    getLeftDistanceMeters(),
+    getRightDistanceMeters()
+  );
+
+  field.setRobotPose(pose);
+
+  SmartDashboard.putNumber("Left Encoder", leftEncoder.getPosition());
+  SmartDashboard.putNumber("Right Encoder", rightEncoder.getPosition());
+
+  }
+
+  public void aimAtPoint(Translation2d target, double forwardSpeed) {
+
+    Pose2d pose = odometry.getPoseMeters();
+
+    Rotation2d targetAngle =
+        target.minus(pose.getTranslation()).getAngle();
+
+    double omega =
+        headingPID.calculate(
+            pose.getRotation().getRadians(),
+            targetAngle.getRadians()
+        );
+
+    ChassisSpeeds speeds =
+        new ChassisSpeeds(forwardSpeed, 0, omega);
+
+    DifferentialDriveWheelSpeeds wheelSpeeds =
+        kinematics.toWheelSpeeds(speeds);
+
+    drive.tankDrive(
+        wheelSpeeds.leftMetersPerSecond,
+        wheelSpeeds.rightMetersPerSecond
+    );
+
+}
+
+@Override
+public void simulationPeriodic() {
+
+    // Send motor outputs to the sim
+    driveSim.setInputs(
+        leftLeader.get() * 12.0,
+        rightLeader.get() * 12.0
+    );
+
+    driveSim.update(0.02); // 20ms loop
+
+    // Update encoders
+    leftEncoder.setPosition(
+        driveSim.getLeftPositionMeters()
+    );
+
+    rightEncoder.setPosition(
+        driveSim.getRightPositionMeters()
+    );
+
+    // Update gyro
+    gyro.getSimState().setRawYaw(
+        driveSim.getHeading().getDegrees()
+    );
   }
 
 }
